@@ -107,13 +107,16 @@ def template_visuals(
 def set_anchor_position(anchor: ET.Element, row: int, col: int) -> None:
     start = anchor.find(f"{{{DRAW}}}from")
     end = anchor.find(f"{{{DRAW}}}to")
-    if start is None or end is None:
+    if start is None:
         return
     start.find(f"{{{DRAW}}}row").text = str(row)
     start.find(f"{{{DRAW}}}col").text = str(col)
-    end.find(f"{{{DRAW}}}row").text = str(row + 1)
-    end.find(f"{{{DRAW}}}col").text = str(col + 1)
+    if end is not None:
+        end.find(f"{{{DRAW}}}row").text = str(row + 1)
+        end.find(f"{{{DRAW}}}col").text = str(col + 1)
     for marker in (start, end):
+        if marker is None:
+            continue
         row_offset = marker.find(f"{{{DRAW}}}rowOff")
         col_offset = marker.find(f"{{{DRAW}}}colOff")
         if row_offset is not None:

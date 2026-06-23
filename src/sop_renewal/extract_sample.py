@@ -175,8 +175,14 @@ def extract(input_path: Path, sheet_name: str, image_dir: Path) -> dict:
         "people": parse_integer(cells["Z3"]),
         "file_number": cells["Q1"],
         "effective_date_serial": cells["Z1"],
-        "material": {"name": cells["AE3"], "qty": parse_integer(cells["AI3"])},
-        "tool": {"name": cells["AE10"], "qty": parse_integer(cells["AI10"])},
+        "material": {
+            "name": cells.get("AE3", ""),
+            "qty": parse_integer(cells.get("AI3", "0") or "0"),
+        },
+        "tool": {
+            "name": cells.get("AE10", ""),
+            "qty": parse_integer(cells.get("AI10", "0") or "0"),
+        },
         "torque": torque_match.group(1).replace(" ", "") if torque_match else None,
         "job_requirements": [
             cells[address]
@@ -187,9 +193,9 @@ def extract(input_path: Path, sheet_name: str, image_dir: Path) -> dict:
             cells[address] for address in ("AE20", "AE21") if address in cells
         ],
         "hazards": [
-            {"risk": cells["B26"], "effect": cells["N26"]},
-            {"risk": cells["B27"], "effect": cells["N27"]},
-            {"risk": cells["B28"], "effect": cells["N28"]},
+            {"risk": cells.get("B26", ""), "effect": cells.get("N26", "")},
+            {"risk": cells.get("B27", ""), "effect": cells.get("N27", "")},
+            {"risk": cells.get("B28", ""), "effect": cells.get("N28", "")},
         ],
         "operation_text": operation_text,
         "operation_images": sorted(
