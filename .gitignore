@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+
+# Local agent/work artifacts
+.codex-work/
+
+# Generated outputs
+outputs/
+
+# Python cache and test artifacts
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# OS/editor temporary files
+.DS_Store
+Thumbs.db
+~$*.xlsx
+
