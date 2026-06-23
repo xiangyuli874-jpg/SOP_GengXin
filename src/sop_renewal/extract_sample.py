@@ -109,8 +109,8 @@ def extract_drawings(
         col = int(start.find("xdr:col", NS).text)
         picture = anchor.find("xdr:pic", NS)
         shape = anchor.find("xdr:sp", NS)
-        if picture is not None:
-            blip = picture.find("xdr:blipFill/a:blip", NS)
+        blip = anchor.find(".//a:blip", NS)
+        if blip is not None:
             media_path = drawing_targets[blip.attrib[f"{{{REL}}}embed"]]
             payload = book.read(media_path)
             suffix = Path(media_path).suffix.lower()

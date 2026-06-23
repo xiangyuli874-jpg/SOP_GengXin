@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import base64
 import copy
 import json
 import posixpath
@@ -21,6 +22,14 @@ from preserve_print_settings import (
     remap_non_visual_ids,
     replace_child,
     resolve,
+)
+
+GENERATED_CHECKMARK_PNG = base64.b64decode(
+    "iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAYAAAByDd+UAAAAoklEQVR4nO3WwQ2A"
+    "IAwFUPgLsYyrOIWruEwnwhOJIVBKLY0x9qSJ/ge1GmPOOXgWXLXwgwsKnwDTuXdH"
+    "P1q/FqnCaDviMpDbWYHhibkMDVUtxcrdUYWZgFwrWwWP5yYCRyvXYF2whPVCtVgT"
+    "rMNG5zNYE2zdJBkMCcZ+aWamT4qxQzMTYvZakACdXRieBGq6AMlF9+ByrG15/H8T"
+    "rQvmiW8DL6JpWDgQ3Eh3AAAAAElFTkSuQmCC"
 )
 
 
@@ -67,9 +76,15 @@ def template_visuals(
         text = "".join(
             node.text or "" for node in anchor.findall(f".//{{{ART}}}t")
         )
+        start = anchor.find(f"{{{DRAW}}}from")
+        picture = anchor.find(f"{{{DRAW}}}pic")
+        if start is not None and picture is not None:
+            row = int(start.find(f"{{{DRAW}}}row").text)
+            col = int(start.find(f"{{{DRAW}}}col").text)
+            if (row, col) == (3, 1):
+                labels.append(anchor)
         if text in LABEL_TEXTS:
             labels.append(anchor)
-        start = anchor.find(f"{{{DRAW}}}from")
         shape = anchor.find(f"{{{DRAW}}}sp")
         if start is not None and shape is not None and not text:
             row = int(start.find(f"{{{DRAW}}}row").text)
@@ -87,6 +102,24 @@ def template_visuals(
                 checkmark = anchor
                 checkmark_media = media
     return labels, legend_boxes, targets, checkmark, checkmark_media
+
+
+def set_anchor_position(anchor: ET.Element, row: int, col: int) -> None:
+    start = anchor.find(f"{{{DRAW}}}from")
+    end = anchor.find(f"{{{DRAW}}}to")
+    if start is None or end is None:
+        return
+    start.find(f"{{{DRAW}}}row").text = str(row)
+    start.find(f"{{{DRAW}}}col").text = str(col)
+    end.find(f"{{{DRAW}}}row").text = str(row + 1)
+    end.find(f"{{{DRAW}}}col").text = str(col + 1)
+    for marker in (start, end):
+        row_offset = marker.find(f"{{{DRAW}}}rowOff")
+        col_offset = marker.find(f"{{{DRAW}}}colOff")
+        if row_offset is not None:
+            row_offset.text = "0"
+        if col_offset is not None:
+            col_offset.text = "0"
 
 
 def add_visuals(
@@ -148,7 +181,9 @@ def add_visuals(
         next_object_id = remap_non_visual_ids(cloned, next_object_id)
         output_drawing.append(cloned)
 
-    if checkmark_template is not None and checkmark_source_media:
+    if checkmark_template is not None or any(
+        tags.get(tag_name) for tag_name in CHECKMARK_COLUMNS
+    ):
         media_name = f"sop_p{page_index}_checkmark.png"
         relationship_id = f"rIdSopP{page_index}Checkmark"
         ET.SubElement(
@@ -163,16 +198,29 @@ def add_visuals(
                 "Target": f"../media/{media_name}",
             },
         )
-        added[f"xl/media/{media_name}"] = checkmark_template_book.read(
-            checkmark_source_media
-        )
+        if checkmark_template is not None and checkmark_source_media:
+            added[f"xl/media/{media_name}"] = checkmark_template_book.read(
+                checkmark_source_media
+            )
+        else:
+            added[f"xl/media/{media_name}"] = GENERATED_CHECKMARK_PNG
+            checkmark_template = next(
+                (
+                    anchor
+                    for anchor in list(output_drawing)
+                    if anchor.find(f"{{{DRAW}}}pic") is not None
+                    and anchor.find(f"{{{DRAW}}}from") is not None
+                ),
+                None,
+            )
+        if checkmark_template is None:
+            return added
         for tag_name, column in CHECKMARK_COLUMNS.items():
             if not tags.get(tag_name):
                 continue
             cloned = copy.deepcopy(checkmark_template)
             next_object_id = remap_non_visual_ids(cloned, next_object_id)
-            cloned.find(f"{{{DRAW}}}from/{{{DRAW}}}col").text = str(column)
-            cloned.find(f"{{{DRAW}}}to/{{{DRAW}}}col").text = str(column + 1)
+            set_anchor_position(cloned, 6, column)
             cloned.find(f".//{{{ART}}}blip").attrib[
                 f"{{{REL}}}embed"
             ] = relationship_id

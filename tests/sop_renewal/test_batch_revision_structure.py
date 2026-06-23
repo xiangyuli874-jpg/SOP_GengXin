@@ -82,6 +82,34 @@ class BatchRevisionStructureTest(unittest.TestCase):
             self.assertIn((32, 31), anchors, name)
             self.assertIn((32, 35), anchors, name)
 
+    def test_each_sop_page_has_tcl_logo(self) -> None:
+        for name, sheet_path in self.sop_sheets.items():
+            root = ET.fromstring(self.book.read(sheet_path))
+            drawing_ref = root.find(f"{{{MAIN}}}drawing")
+            self.assertIsNotNone(drawing_ref, name)
+            rels_path = posixpath.join(
+                posixpath.dirname(sheet_path),
+                "_rels",
+                posixpath.basename(sheet_path) + ".rels",
+            )
+            rels = ET.fromstring(self.book.read(rels_path))
+            targets = {
+                rel.attrib["Id"]: resolve(sheet_path, rel.attrib["Target"])
+                for rel in rels
+            }
+            drawing_path = targets[drawing_ref.attrib[f"{{{REL}}}id"]]
+            drawing = ET.fromstring(self.book.read(drawing_path))
+            picture_anchors = {
+                (
+                    int(anchor.find(f"{{{DRAW}}}from/{{{DRAW}}}row").text),
+                    int(anchor.find(f"{{{DRAW}}}from/{{{DRAW}}}col").text),
+                )
+                for anchor in list(drawing)
+                if anchor.find(f"{{{DRAW}}}pic") is not None
+                and anchor.find(f"{{{DRAW}}}from") is not None
+            }
+            self.assertIn((3, 1), picture_anchors, name)
+
     def test_key_post_and_visual_checkmarks_follow_rules(self) -> None:
         visual_jobs = {
             "GT-QZ01箱体外观检查",
@@ -160,6 +188,33 @@ class BatchRevisionStructureTest(unittest.TestCase):
                 )
             }
             self.assertFalse(forbidden & merges, name)
+
+    def test_first_job_keeps_first_step_operation_picture(self) -> None:
+        sheet_path = self.sheets["GT-QZ01箱体外观检查"]
+        root = ET.fromstring(self.book.read(sheet_path))
+        drawing_ref = root.find(f"{{{MAIN}}}drawing")
+        rels_path = posixpath.join(
+            posixpath.dirname(sheet_path),
+            "_rels",
+            posixpath.basename(sheet_path) + ".rels",
+        )
+        rels = ET.fromstring(self.book.read(rels_path))
+        targets = {
+            rel.attrib["Id"]: resolve(sheet_path, rel.attrib["Target"])
+            for rel in rels
+        }
+        drawing_path = targets[drawing_ref.attrib[f"{{{REL}}}id"]]
+        drawing = ET.fromstring(self.book.read(drawing_path))
+        picture_anchors = {
+            (
+                int(anchor.find(f"{{{DRAW}}}from/{{{DRAW}}}row").text),
+                int(anchor.find(f"{{{DRAW}}}from/{{{DRAW}}}col").text),
+            )
+            for anchor in list(drawing)
+            if anchor.find(f"{{{DRAW}}}pic") is not None
+            and anchor.find(f"{{{DRAW}}}from") is not None
+        }
+        self.assertIn((11, 1), picture_anchors)
 
     def test_unused_bottom_area_keeps_template_grid(self) -> None:
         sheet_path = self.sheets["GT-QZ01箱体外观检查"]
