@@ -24,6 +24,8 @@ from preserve_print_settings import (
     resolve,
 )
 
+CONTENT_TYPES = "http://schemas.openxmlformats.org/package/2006/content-types"
+
 GENERATED_CHECKMARK_PNG = base64.b64decode(
     "iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAYAAAByDd+UAAAAoklEQVR4nO3WwQ2A"
     "IAwFUPgLsYyrOIWruEwnwhOJIVBKLY0x9qSJ/ge1GmPOOXgWXLXwgwsKnwDTuXdH"
@@ -125,6 +127,74 @@ def set_anchor_position(anchor: ET.Element, row: int, col: int) -> None:
             col_offset.text = "0"
 
 
+def set_checkmark_anchor(anchor: ET.Element, row: int, col: int) -> None:
+    """Place a generated checkmark inside the template checkbox.
+
+    The blank template has no checked image to copy, so the fallback may clone a
+    larger picture anchor (for example the TCL logo).  Force the cloned anchor to
+    a compact one-cell image anchor so it cannot inherit that larger size.
+    """
+
+    set_anchor_position(anchor, row, col)
+    start = anchor.find(f"{{{DRAW}}}from")
+    if start is None:
+        return
+
+    anchor.tag = f"{{{DRAW}}}oneCellAnchor"
+    anchor.attrib.clear()
+    end = anchor.find(f"{{{DRAW}}}to")
+    if end is not None:
+        anchor.remove(end)
+
+    extent = anchor.find(f"{{{DRAW}}}ext")
+    if extent is None:
+        extent = ET.Element(f"{{{DRAW}}}ext")
+        children = list(anchor)
+        from_index = children.index(start)
+        anchor.insert(from_index + 1, extent)
+    extent.attrib["cx"] = str(24 * 9525)
+    extent.attrib["cy"] = str(24 * 9525)
+
+    row_offset = start.find(f"{{{DRAW}}}rowOff")
+    col_offset = start.find(f"{{{DRAW}}}colOff")
+    if row_offset is not None:
+        row_offset.text = str(2 * 9525)
+    if col_offset is not None:
+        col_offset.text = str(3 * 9525)
+
+
+def ensure_media_content_types(
+    content_types: ET.Element,
+    package_names: set[str],
+    added_names: set[str],
+) -> None:
+    extensions = {
+        Path(name).suffix.lower().lstrip(".")
+        for name in package_names | added_names
+        if name.startswith("xl/media/")
+    }
+    defaults = {
+        item.attrib.get("Extension")
+        for item in content_types
+        if item.tag == f"{{{CONTENT_TYPES}}}Default"
+    }
+    required = {
+        "jpeg": "image/jpeg",
+        "jpg": "image/jpeg",
+        "png": "image/png",
+    }
+    for extension, content_type in required.items():
+        if extension in extensions and extension not in defaults:
+            ET.SubElement(
+                content_types,
+                f"{{{CONTENT_TYPES}}}Default",
+                {
+                    "Extension": extension,
+                    "ContentType": content_type,
+                },
+            )
+
+
 def add_visuals(
     template: zipfile.ZipFile,
     checkmark_template_book: zipfile.ZipFile,
@@ -223,7 +293,7 @@ def add_visuals(
                 continue
             cloned = copy.deepcopy(checkmark_template)
             next_object_id = remap_non_visual_ids(cloned, next_object_id)
-            set_anchor_position(cloned, 6, column)
+            set_checkmark_anchor(cloned, 6, column)
             cloned.find(f".//{{{ART}}}blip").attrib[
                 f"{{{REL}}}embed"
             ] = relationship_id
@@ -294,6 +364,7 @@ def main() -> None:
         with zipfile.ZipFile(args.input) as source:
             output_paths = sheet_paths(source)
             replacements: dict[str, bytes] = {}
+            package_names = set(source.namelist())
             for page_index, page in enumerate(page_spec, start=1):
                 output_sheet_xml = output_paths[page["name"]]
                 root = ET.fromstring(source.read(output_sheet_xml))
@@ -337,6 +408,17 @@ def main() -> None:
                 replacements[output_sheet_xml] = ET.tostring(
                     root, encoding="utf-8", xml_declaration=True
                 )
+
+            content_types = ET.fromstring(source.read("[Content_Types].xml"))
+            ensure_media_content_types(
+                content_types,
+                package_names,
+                set(replacements),
+            )
+            ET.register_namespace("", CONTENT_TYPES)
+            replacements["[Content_Types].xml"] = ET.tostring(
+                content_types, encoding="utf-8", xml_declaration=True
+            )
 
             args.output.parent.mkdir(parents=True, exist_ok=True)
             with zipfile.ZipFile(args.output, "w") as destination:

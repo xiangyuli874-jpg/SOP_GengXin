@@ -53,6 +53,15 @@ class BatchRevisionStructureTest(unittest.TestCase):
             )
             self.assertIsNone(tab_color, name)
 
+    def test_content_types_include_jpeg_media(self) -> None:
+        root = ET.fromstring(self.book.read("[Content_Types].xml"))
+        defaults = {
+            item.attrib.get("Extension"): item.attrib.get("ContentType")
+            for item in root
+            if item.tag.endswith("Default")
+        }
+        self.assertEqual(defaults.get("jpeg"), "image/jpeg")
+
     def test_each_sop_page_has_red_and_blue_operation_legend_boxes(self) -> None:
         for name, sheet_path in self.sop_sheets.items():
             root = ET.fromstring(self.book.read(sheet_path))
