@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="360" viewBox="0 0 1200 360" role="img" aria-labelledby="title desc">
+  <title id="title">SOP 焕新处理流程</title>
+  <desc id="desc">旧版工作簿依次经过内容提取、规则建模、模板生成和结构校验，输出新版 SOP、冲突审核和处理日志。</desc>
+  <rect width="1200" height="360" rx="24" fill="#F4F8FA"/>
+  <g font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif"><text x="56" y="68" fill="#0B1F33" font-size="42" font-weight="800">从旧版内容到新版 SOP</text><text x="56" y="104" fill="#527088" font-size="21">将内容迁移与视觉保真分开处理，让自动转换保持可追溯。</text></g>
+  <g fill="none" stroke="#7EA6B3" stroke-width="4" stroke-linecap="round"><path d="M283 212H343"/><path d="M556 212H616"/><path d="M829 212H889"/></g><g fill="#7EA6B3"><path d="M343 205l14 7-14 7z"/><path d="M616 205l14 7-14 7z"/><path d="M889 205l14 7-14 7z"/></g>
+  <g font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif">
+    <g transform="translate(56 142)"><rect width="227" height="146" rx="14" fill="#0B6572"/><text x="24" y="42" fill="#BDE9DF" font-size="18" font-weight="700">01 / 提取</text><text x="24" y="79" fill="#FFF" font-size="29" font-weight="800">解析旧版工作簿</text><text x="24" y="111" fill="#D7F0EB" font-size="19">字段 · 图片 · 文本框</text></g>
+    <g transform="translate(329 142)"><rect width="227" height="146" rx="14" fill="#D7E9EE"/><text x="24" y="42" fill="#0B6572" font-size="18" font-weight="700">02 / 建模</text><text x="24" y="79" fill="#0B1F33" font-size="29" font-weight="800">应用映射规则</text><text x="24" y="111" fill="#527088" font-size="19">工序 · 物料 · 控制点</text></g>
+    <g transform="translate(602 142)"><rect width="227" height="146" rx="14" fill="#D7E9EE"/><text x="24" y="42" fill="#0B6572" font-size="18" font-weight="700">03 / 生成</text><text x="24" y="79" fill="#0B1F33" font-size="29" font-weight="800">写入新版模板</text><text x="24" y="111" fill="#527088" font-size="19">分页 · 图位 · 记录表</text></g>
+    <g transform="translate(875 142)"><rect width="269" height="146" rx="14" fill="#0B1F33"/><text x="24" y="42" fill="#84D3C5" font-size="18" font-weight="700">04 / 保真与校验</text><text x="24" y="79" fill="#FFF" font-size="29" font-weight="800">输出可审核结果</text><text x="24" y="111" fill="#C9D8E5" font-size="19">图像锚点 · 标记 · 打印设置</text></g>
+  </g>
+</svg>
