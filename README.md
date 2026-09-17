@@ -1,108 +1,115 @@
 # SOP_GengXin
 
-Excel SOP renewal toolkit for converting legacy washing-machine SOP workbooks into the newer standard workbook format.
+<p align="center">
+  <img src="./assets/readme/hero.svg" width="100%" alt="SOP_GengXin：将旧版洗衣机岗位 SOP 转换为可审核的新版工艺文件">
+</p>
 
-This repository contains the conversion scripts, layout rules, preservation utilities, verification tests, and design notes used for the SOP renewal workflow.
+<p align="center">
+  <code>Excel</code> · <code>Node.js</code> · <code>Python</code> · <code>SOP conversion</code>
+</p>
 
-## Current Scope
+`SOP_GengXin` 是一个面向洗衣机关键岗位的 Excel SOP 版式焕新工具。它从旧版工作簿提取工艺内容与操作图片，按新版模板组织字段和步骤，并保留需要人工复核的冲突与处理记录。
 
-- Parse legacy `.xlsx` SOP sheets, including cell values, drawing anchors, text boxes, and embedded operation images.
-- Build structured SOP models with job header fields, materials, tools, operation steps, control points, quality requirements, and conflict notes.
-- Generate single-sample and batch renewed SOP workbooks from the standard template.
-- Preserve template-level visuals and print settings after workbook export.
-- Keep TCL logos, operation legend boxes, checkmark images, media relationships, and workbook content types intact.
-- Generate conflict review and processing log sheets for traceability.
+## 它解决什么问题
 
-## Latest Updates
+旧版 SOP 的工艺内容、图片和文字说明往往能够复用，但新版文件同时要求固定版式、图位、标记、品牌元素和打印设置。这个项目把两件事拆开处理：
 
-- Added robust generated checkmark placement so fallback checkmarks are compact `oneCellAnchor` images and do not inherit large logo dimensions.
-- Added media content type completion for workbook packages, including `jpeg`, `jpg`, and `png` defaults.
-- Added structure tests for JPEG content types, TCL logo preservation, operation legend boxes, checkmark placement, and generated checkmark size.
-- Improved extraction/preservation behavior for missing SOP fields and drawing anchors.
+- 用规则把旧版的岗位信息、工具物料、作业步骤、控制点和质量要求转换为结构化数据。
+- 用新版模板生成工作表，并恢复图片锚点、文字框、图例框、勾选标记、媒体关系和页面设置。
+- 对无法可靠推断或超出图位容量的内容写入“冲突审核”和“处理日志”，避免静默丢失。
 
-## Repository Layout
+<p align="center">
+  <img src="./assets/readme/workflow.svg" width="100%" alt="SOP 焕新流程：提取旧版工作簿、应用映射规则、写入新版模板、保真与校验">
+</p>
 
-```text
-docs/
-  superpowers/
-    plans/      Design and implementation planning records
-    specs/      SOP renewal design notes
+## 当前能力
 
-src/sop_renewal/
-  analyze_batch.py              Batch workbook extraction
-  batch_rules.mjs               Batch SOP modeling and rule application
-  build_batch.mjs               Batch workbook generation entry point
-  build_sample.mjs              Single-sample workbook generation entry point
-  clone_template_pages.py       Template page cloning
-  extract_sample.py             Single-sheet extraction
-  layout_planner.mjs            Dynamic step layout planning
-  preserve_batch.py             Batch workbook visual/media preservation
-  preserve_print_settings.py    Sample workbook print/visual preservation
-  sample_rules.mjs              Sample SOP modeling rules
-  verify_batch.mjs              Batch output preview and formula scan
+- 批量解析旧版 `.xlsx` 工作簿中的单元格、图片、绘图锚点和文本框。
+- 为每个岗位建立与版式分离的数据模型，再按页面容量规划新版 SOP 页。
+- 生成单岗位样例和批量新版 SOP，附带冲突审核表与处理日志。
+- 保留模板中的 TCL 标识、操作图例、媒体内容类型、复选标记以及打印配置。
+- 通过结构测试检查关键视觉对象和生成文件的包结构。
 
-tests/sop_renewal/
-  *.test.mjs                    Node.js unit tests
-  test_*.py                     Python workbook structure tests
+## 快速开始
 
-outputs/
-  Generated workbooks and previews; ignored by Git
-```
+项目当前按本地 SOP 工作区的绝对路径运行。请先准备对应的旧版源文件、新版标准模板和关键岗位清单；在另一台机器上使用前，需要调整脚本中的路径配置。
 
-## Git-Ignored Local Artifacts
-
-The repository intentionally excludes local/generated artifacts:
-
-- `node_modules/`
-- `.codex-work/`
-- `outputs/`
-- `__pycache__/`
-- `*.pyc`
-- Excel temporary lock files such as `~$*.xlsx`
-
-The source workbook `普通8kg及以下产品前总装SOP.xlsx` is tracked because it is part of the current project input.
-
-## Running
-
-The scripts currently use absolute paths from the local SOP workspace. Before running on another machine, update the hard-coded paths in the entry scripts or keep the same workspace layout.
-
-Single-sample generation:
+生成单岗位样例：
 
 ```powershell
 node src/sop_renewal/build_sample.mjs
 ```
 
-Batch generation:
+批量生成新版 SOP：
 
 ```powershell
 node src/sop_renewal/build_batch.mjs
 ```
 
-Batch verification preview/formula scan:
+生成批量预览并扫描公式错误：
 
 ```powershell
 node src/sop_renewal/verify_batch.mjs
 ```
 
-## Testing
+## 输入与输出
 
-Node.js tests:
+### 输入
+
+- 旧版关键岗位 SOP 工作簿：提供原始工艺动作、参数、图片与文字说明。
+- 新版洗衣机 SOP 标准模板：提供页面结构、固定视觉对象与格式约束。
+- 关键岗位清单：用于判定需要勾选的关键工序。
+
+### 输出
+
+- 新版 SOP 工作簿：按岗位和页面容量生成的工艺文件。
+- `冲突审核`：记录字段歧义、内容冲突和超出版面容量等人工复核事项。
+- `处理日志`：记录岗位、步骤、图像与页面的自动处理结果。
+
+生成结果位于 `outputs/`，默认不提交到 Git，以避免将可再生的大型文件带入仓库。
+
+## 项目结构
+
+```text
+src/sop_renewal/
+  analyze_batch.py             批量提取工作簿内容与图片
+  batch_rules.mjs              岗位数据建模与业务规则
+  build_batch.mjs              批量生成入口
+  build_sample.mjs             单岗位样例入口
+  clone_template_pages.py      根据模板创建 SOP 页面
+  layout_planner.mjs           步骤与图位的动态分页
+  preserve_batch.py            恢复批量输出的视觉与媒体对象
+  preserve_print_settings.py   恢复单样例的打印与视觉设置
+  verify_batch.mjs             输出预览与公式扫描
+
+tests/sop_renewal/             Node.js 与 Python 结构测试
+docs/superpowers/              设计规格与实施记录
+assets/readme/                 README 的可编辑 SVG 视觉资产
+```
+
+## 验证
+
+Node.js 规则测试：
 
 ```powershell
 node --test tests/sop_renewal/*.test.mjs
 ```
 
-Python structure tests can be run with either `unittest` or `pytest` after generating the expected output workbook:
+Python 工作簿结构测试：
 
 ```powershell
 python -m unittest discover tests/sop_renewal
 ```
 
-Some tests depend on generated files under `outputs/` and on local template workbooks that are not committed.
+部分测试依赖本地模板和已生成的工作簿，因此在只克隆仓库的环境中可能因缺少这些外部文件而跳过或失败。这些输入与生成物有意未纳入版本控制。
 
-## Notes
+## 处理原则
 
-- Generated output files are not committed; regenerate them from the scripts when needed.
-- The conversion logic favors preserving original process content and key parameters over copying conflicting values from reference examples.
-- Conflict and processing-log sheets are generated so manual review remains focused on high-risk differences.
+- 旧版 SOP 的工艺动作、质量要求、安全要求和关键参数优先于参考案例。
+- 新版案例用于版式与措辞参考，不会静默覆盖旧版中的实质内容。
+- 每次转换都生成新文件，不覆盖源工作簿。
+- 对高风险差异保留审核入口，让自动化承担重复工作，而不是掩盖不确定性。
 
+## 本地忽略项
+
+`.gitignore` 已排除 `node_modules/`、`.codex-work/`、`outputs/`、Python 缓存和 Excel 临时锁文件。当前项目输入工作簿作为可复现的转换样本保留在版本控制中。
